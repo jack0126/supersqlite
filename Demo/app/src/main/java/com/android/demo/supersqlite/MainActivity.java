@@ -1,4 +1,4 @@
-package com.android.demo.supersqlite;
+﻿package com.android.demo.supersqlite;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +16,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
+        textView1 = findViewById(R.id.textView1);
 
         SuperSQLite<DataRow>superSQLite = new SuperSQLite<>(this, "database.db", DataRow.class);
 
