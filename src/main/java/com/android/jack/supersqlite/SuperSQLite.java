@@ -210,6 +210,10 @@ public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
         return fun.function(getWritableDatabase());
     }
 
+    public synchronized void executor(Procedure proc) {
+        proc.procedure(getWritableDatabase());
+    }
+
     /**
      * 便用 id查询数据库
      * @param ids
