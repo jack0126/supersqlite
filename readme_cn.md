@@ -29,7 +29,7 @@ repositories {
     
 示例：
 
-//数据模型定义
+//数据模型定义，数据模型必需是 BaseRow的子类
 
 public class DataRow extends BaseRow {
 
