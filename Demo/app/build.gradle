@@ -27,7 +27,7 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile(name:'supersqlite1.0', ext:'aar')
+    compile(name:'supersqlite-debug', ext:'aar')
 
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
