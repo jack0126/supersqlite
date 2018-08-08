@@ -177,6 +177,22 @@ public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
         return false;
     }
 
+    public synchronized boolean delete(String where) {
+        if (where == null || where.trim().isEmpty()) {
+            return false;
+        }
+
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE " + where;
+        try {
+            Log.i(TAG, "delete: " + sql);
+            getWritableDatabase().execSQL(sql);
+            return true;
+        } catch (SQLException e) {
+            Log.w(TAG, "delete: ", e);
+            return false;
+        }
+    }
+
     /**
      * 使用 id删除记录
      * @param ids
@@ -204,14 +220,6 @@ public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
             Log.w(TAG, "delete: ", e);
             return false;
         }
-    }
-
-    public synchronized <E>E executor(Function<E>fun) {
-        return fun.function(getWritableDatabase());
-    }
-
-    public synchronized void executor(Procedure proc) {
-        proc.procedure(getWritableDatabase());
     }
 
     /**
@@ -313,6 +321,14 @@ public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
             }
         }
         return list;
+    }
+
+    public synchronized <E>E executor(Function<E>fun) {
+        return fun.function(getWritableDatabase());
+    }
+
+    public synchronized void executor(Procedure proc) {
+        proc.procedure(getWritableDatabase());
     }
 
     /**
