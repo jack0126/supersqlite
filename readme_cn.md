@@ -1,7 +1,10 @@
 android sqlite database 框架。
 
-
 可以使用对象来操作数据库的一切。
+
+支持自定义表结构，需要定义如下 String[]COLUMNS_NAME，表结构字段名必需是数据变量名，如：
+
+private static final COLUMNS_NAME = {"name", "sex", "age"};
 
 集成方法：
 
@@ -20,8 +23,14 @@ repositories {
     
 示例：
 
+//数据模型定义
+
 public class DataRow extends BaseRow {
 
+    //自定义数据表结构
+    
+    private static final COLUMNS_NAME = {"name", "sex", "age", "tel", "createTime"};
+    
     String name;
     
     boolean sex;
