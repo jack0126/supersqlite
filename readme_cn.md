@@ -13,6 +13,7 @@ private static final COLUMNS_NAME = {"name", "sex", "age"};
 只支持单表数据库。
 
 集成方法：
+作为模块添加或者AAR包添加
 
 repositories {
 
@@ -26,6 +27,7 @@ repositories {
 
 
     implementation(name: 'supersqlite-20180806', ext: 'aar')
+    
     
 示例：
 
