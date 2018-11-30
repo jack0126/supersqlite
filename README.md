@@ -4,7 +4,7 @@ android sqlite database 框架。
 
 各位大佬帮我改进改进，e-mail: 1298809673@qq.com
 
-本框架用反射实现 POJO类自动生成数据库表，SQL语句自动完成，自动读取查询结果。
+本框架用反射实现 POJO类自动生成数据库表以及约束，SQL语句自动完成，自动读取查询结果。
 使用本框架你不需要写任何SQL语句就可以实现对数据库的建表，插入，查询，修改，删除等操作。
     
 示例：
@@ -29,18 +29,31 @@ android sqlite database 框架。
         
 
 @Binding("Person")
+
 public class Person {
+
     @Binding("ID")
+    
     @PrimaryKey
+    
     @NotNull
+    
     @AutoIncrement
+    
     private int id;
+    
     @Binding("Name")
+    
     @NotNull
+    
     private String name;
+    
     @Binding("Age")
+    
     private int age;
+    
     @Binding("Tel")
+    
     private String phone;
 
     public int getId() {
