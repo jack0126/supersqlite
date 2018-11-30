@@ -74,7 +74,7 @@ public class SuperSQLite extends SQLiteOpenHelper {
     }
 
     /**
-     * 将数据插入到 POJO 类对应的数据库表中
+     * 将数据插入到 POJO 类对应的数据库表中，如果数据表不存在将自动创建
      * @param clsTable 数据表对应的 POJO 类
      * @param items 数据对象
      * @param <T>
@@ -107,7 +107,7 @@ public class SuperSQLite extends SQLiteOpenHelper {
 
     /**
      *
-     * 将数据插入或更新到 POJO 类对应的数据库表中。
+     * 将数据插入或更新到 POJO 类对应的数据库表中，如果数据表不存在将自动创建
      * 如果数据表中已存在对应主键的数据则会更新旧的数据，否则插入一条新的数据
      * @param clsTable 数据表对应的 POJO 类
      * @param items 数据对象
