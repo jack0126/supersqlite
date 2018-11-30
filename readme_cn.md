@@ -1,42 +1,59 @@
-android sqlite database ¿ò¼Ü¡£
+# SuperSQLite
 
-±¾¿ò¼ÜÓÃ·´ÉäÊµÏÖ POJOÀà×Ô¶¯Éú³ÉÊı¾İ¿â±í£¬SQLÓï¾ä×Ô¶¯Íê³É£¬×Ô¶¯¶ÁÈ¡²éÑ¯½á¹û¡£
-Ê¹ÓÃ±¾¿ò¼ÜÄã²»ĞèÒªĞ´ÈÎºÎSQLÓï¾ä¾Í¿ÉÒÔÊµÏÖ¶ÔÊı¾İ¿âµÄ½¨±í£¬²åÈë£¬²éÑ¯£¬ĞŞ¸Ä£¬É¾³ıµÈ²Ù×÷¡£
+android sqlite database æ¡†æ¶ã€‚
+
+å„ä½å¤§ä½¬å¸®æˆ‘æ”¹è¿›æ”¹è¿›ï¼Œe-mail: 1298809673@qq.com
+
+æœ¬æ¡†æ¶ç”¨åå°„å®ç° POJOç±»è‡ªåŠ¨ç”Ÿæˆæ•°æ®åº“è¡¨ä»¥åŠçº¦æŸï¼ŒSQLè¯­å¥è‡ªåŠ¨å®Œæˆï¼Œè‡ªåŠ¨è¯»å–æŸ¥è¯¢ç»“æœã€‚
+ä½¿ç”¨æœ¬æ¡†æ¶ä½ ä¸éœ€è¦å†™ä»»ä½•SQLè¯­å¥å°±å¯ä»¥å®ç°å¯¹æ•°æ®åº“çš„å»ºè¡¨ï¼Œæ’å…¥ï¼ŒæŸ¥è¯¢ï¼Œä¿®æ”¹ï¼Œåˆ é™¤ç­‰æ“ä½œã€‚
     
-Ê¾Àı£º
+ç¤ºä¾‹ï¼š
 
         SuperSQLite superSQLite = new SuperSQLite(this, "test.db");
 
-        Person data1 = new Person();//Êı¾İ1
+        Person data1 = new Person();//æ•°æ®1
         data1.setName("aa");
         data1.setAge(10);
         data1.setPhone("13312345678");
 
-        Person data2 = new Person();//Êı¾İ2
+        Person data2 = new Person();//æ•°æ®2
         data2.setName("bb");
         data2.setAge(15);
         data2.setPhone("13412345678");
 
-        superSQLite.insert(Person.class, data1, data2);//²åÈëÊı¾İ£¬Í¬ÒåSQL£ºINSERT INTO Person VALUES(10, NULL, 'aa', '13312345678'), (15, NULL, 'bb', '13412345678')
+        superSQLite.insert(Person.class, data1, data2);//æ’å…¥æ•°æ®ï¼ŒåŒä¹‰SQLï¼šINSERT INTO Person VALUES(10, NULL, 'aa', '13312345678'), (15, NULL, 'bb', '13412345678')
 
-        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class));//²éÑ¯Êı¾İ±íÊı¾İÌõÊı£¬Í¬ÒåSQL£ºSELECT COUNT(*) AS count FROM Person
-        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class, "Name = 'aa'"));//²éÑ¯Êı¾İ±í·ûºÏÌõ¼şµÄÊı¾İÌõÊı£¬Í¬ÒåSQL£ºSELECT COUNT(*) AS count FROM Person WHERE Name = 'aa'
-        Log.d(TAG, "onCreate: " + superSQLite.query(Person.class, "Name = 'aa'"));//²éÑ¯Êı¾İ±íÊı¾İ£¬Í¬ÒåSQL£ºSELECT * FROM Person WHERE Name = 'aa'
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class));//æŸ¥è¯¢æ•°æ®è¡¨æ•°æ®æ¡æ•°ï¼ŒåŒä¹‰SQLï¼šSELECT COUNT(*) AS count FROM Person
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class, "Name = 'aa'"));//æŸ¥è¯¢æ•°æ®è¡¨ç¬¦åˆæ¡ä»¶çš„æ•°æ®æ¡æ•°ï¼ŒåŒä¹‰SQLï¼šSELECT COUNT(*) AS count FROM Person WHERE Name = 'aa'
+        Log.d(TAG, "onCreate: " + superSQLite.query(Person.class, "Name = 'aa'"));//æŸ¥è¯¢æ•°æ®è¡¨æ•°æ®ï¼ŒåŒä¹‰SQLï¼šSELECT * FROM Person WHERE Name = 'aa'
         
 
 @Binding("Person")
+
 public class Person {
+
     @Binding("ID")
+    
     @PrimaryKey
+    
     @NotNull
+    
     @AutoIncrement
+    
     private int id;
+    
     @Binding("Name")
+    
     @NotNull
+    
     private String name;
+    
     @Binding("Age")
+    
     private int age;
+    
     @Binding("Tel")
+    
     private String phone;
 
     public int getId() {
