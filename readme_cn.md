@@ -1,61 +1,75 @@
 android sqlite database 框架。
-
-优点：
-
-本框架使用面向对象的方式来操作 android SQLiteDatabase数据库，使对数据库的操作简单易懂，可以使用对象来操作数据库的一切。
-
-支持自定义表结构，需要定义如下 String[]COLUMNS_NAME，表结构字段名必需是数据变量名，如：
-
-private static final COLUMNS_NAME = {"name", "sex", "age"};
-
-缺点：
-
-只支持单表数据库。
-
-集成方法：
-作为模块添加或者AAR包添加
-
-repositories {
-
-    flatDir {
-    
-        dirs 'libs' //this way we can find the .aar file in libs folder
-        
-    }
-    
-}
-
-
-    implementation(name: 'supersqlite-20180806', ext: 'aar')
-    
     
 示例：
 
-//数据模型定义，数据模型必需是 BaseRow的子类
+        SuperSQLite superSQLite = new SuperSQLite(this, "test.db");
 
-public class DataRow extends BaseRow {
+        Person data1 = new Person();//数据1
+        data1.setName("aa");
+        data1.setAge(10);
+        data1.setPhone("13312345678");
 
-    //自定义数据表结构
-    
-    private static final COLUMNS_NAME = {"name", "sex", "age", "tel", "createTime"};
-    
-    String name;
-    
-    boolean sex;
-    
-    int age;
-    
-    String tel;
-    
-    Date createTime;
-    
+        Person data2 = new Person();//数据2
+        data2.setName("bb");
+        data2.setAge(15);
+        data2.setPhone("13412345678");
+
+        superSQLite.insert(Person.class, data1, data2);//插入数据，同义SQL：INSERT INTO Person VALUES(10, NULL, 'aa', '13312345678'), (15, NULL, 'bb', '13412345678')
+
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class));//查询数据表数据条数，同义SQL：SELECT COUNT(*) AS count FROM Person
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class, "Name = 'aa'"));//查询数据表符合条件的数据条数，同义SQL：SELECT COUNT(*) AS count FROM Person WHERE Name = 'aa'
+        Log.d(TAG, "onCreate: " + superSQLite.query(Person.class, "Name = 'aa'"));//查询数据表数据，同义SQL：SELECT * FROM Person WHERE Name = 'aa'
+        
+
+@Binding("Person")
+public class Person {
+    @Binding("ID")
+    @PrimaryKey
+    @NotNull
+    @AutoIncrement
+    private int id;
+    @Binding("Name")
+    @NotNull
+    private String name;
+    @Binding("Age")
+    private int age;
+    @Binding("Tel")
+    private String phone;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("{%s, %s, %s, %s}", id, name, age, phone);
+    }
 }
-
-SuperSQLite<DataRow> superSQLite = new SuperSQLite<>(context, "database.db", DataRow.class);
-
-superSQLite.insertOrUpdate(new DataRow());
-
-superSQLite.query(new int[]{1});
-
-欢迎一起改进学习。可以联系：final.hsx@qq.com
-
