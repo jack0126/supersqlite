@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Created by hesanxing on 2018/11/29.
  *
+ * 声明主键
  * @author jack
  */
 @Documented

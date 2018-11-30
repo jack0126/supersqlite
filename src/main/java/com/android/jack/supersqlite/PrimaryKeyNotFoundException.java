@@ -7,4 +7,7 @@ package com.android.jack.supersqlite;
  */
 
 public class PrimaryKeyNotFoundException extends Exception {
+    public PrimaryKeyNotFoundException(String s) {
+        super(s);
+    }
 }
