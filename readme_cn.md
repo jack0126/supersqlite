@@ -1,4 +1,6 @@
 android sqlite database 框架。
+
+本框架用反射实现 POJO类自动生成数据库表，SQL语句自动完成，自动读取查询结果。
     
 示例：
 
