@@ -1,7 +1,8 @@
-﻿package com.android.demo.supersqlite;
+package com.android.demo.supersqlite;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.android.jack.supersqlite.SuperSQLite;
@@ -9,6 +10,7 @@ import com.android.jack.supersqlite.SuperSQLite;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
 
     private TextView textView1;
 
@@ -19,24 +21,23 @@ public class MainActivity extends AppCompatActivity {
         
         textView1 = findViewById(R.id.textView1);
 
-        SuperSQLite<DataRow>superSQLite = new SuperSQLite<>(this, "database.db", DataRow.class);
+        SuperSQLite superSQLite = new SuperSQLite(this, "test.db");
 
-        DataRow data1 = new DataRow();
-        data1.setName("张三");
+        Person data1 = new Person();
+        data1.setName("aa");
         data1.setAge(10);
-        data1.setTel("13312345678");
+        data1.setPhone("13312345678");
 
-        DataRow data2 = new DataRow();
-        data2.setName("李四");
+        Person data2 = new Person();
+        data2.setName("bb");
         data2.setAge(15);
-        data2.setTel("13412345678");
+        data2.setPhone("13412345678");
 
-        superSQLite.insertOrUpdate(data1);
-        superSQLite.insertOrUpdate(data2);
+        superSQLite.insert(Person.class, data1, data2);
 
-        List<DataRow> list = superSQLite.query("name = '张三'");
-        DataRow dataRow = list.get(0);
-        textView1.setText(dataRow.getName() + ", " + dataRow.getAge() + ", " + dataRow.getTel());
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class));
+        Log.d(TAG, "onCreate: " + superSQLite.getCount(Person.class, "Name = 'aa'"));
+        Log.d(TAG, "onCreate: " + superSQLite.query(Person.class, "Name = 'aa'"));
     }
 
 

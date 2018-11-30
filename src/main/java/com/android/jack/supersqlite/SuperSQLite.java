@@ -8,12 +8,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 /**
  * Created by Administrator on 2018/8/3.
  * The document in project SuperSQLite.
@@ -21,265 +21,215 @@ import java.util.List;
  * @author Jack
  */
 
-public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
+public class SuperSQLite extends SQLiteOpenHelper {
 
     private static final String TAG = SuperSQLite.class.getSimpleName();
+    private static final Map<Class<?>, TableInfo>sTableInfoCache = new HashMap<>(32);
 
-    public static final String ID_FOR_COLUMN_NAME = "_id_";
-
-    public static final String TABLE_NAME = "_data_table_";
-
-    private final Class<T>rowClass;
-    private TableInfo tableInfo;
-
-    public SuperSQLite(Context context, String name, Class<T>rowClass) {
+    public SuperSQLite(Context context, String name) {
         super(context, name, null, 1);
-        this.rowClass = rowClass;
-        tableInfo = new TableInfo(rowClass);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String sql = generateSQLForCreateTableIfNotExists();
-        Log.i(TAG, "onCreate: sql: " + sql);
-        db.execSQL(sql);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
 
-    private String generateSQLForCreateTableIfNotExists() {
-        StringBuilder sql = new StringBuilder()
-                .append("CREATE TABLE IF NOT EXISTS ").append(TABLE_NAME)
-                .append("(")
-                .append(ID_FOR_COLUMN_NAME).append(" INTEGER PRIMARY KEY AUTOINCREMENT");
-
-        for (TableInfo.ColumnInfo columnInfo : tableInfo.columnInfos) {
-            String name = columnInfo.name;
-            Class<?>type = columnInfo.type;
-
-            if (type == String.class || type == boolean.class || type == char.class ||
-                    type == Boolean.class || type == Character.class) {
-                sql.append(", ").append(name).append(" TEXT");
-            } else if (type == int.class || type == long.class || type == byte.class || type == short.class || type == Date.class ||
-                    type == Integer.class || type == Long.class || type == Byte.class || type == Short.class) {
-                sql.append(",").append(name).append(" INTEGER");
-            } else if (type == double.class || type == float.class ||
-                    type == Double.class || type == Float.class) {
-                sql.append(",").append(name).append(" REAL");
-            }
+    private TableInfo getTableInfo(Class<?>cls, boolean autoCreation) throws SQLException {
+        TableInfo tableInfo = sTableInfoCache.get(cls);
+        if (tableInfo != null) {
+            return tableInfo;
         }
 
-        sql.append(")");
-        return sql.toString();
-    }
+        tableInfo = new TableInfo(cls);
 
-    private T parseRow(Cursor cursor) {
-        T t;
-        try {
-            t = rowClass.newInstance();
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-
-        t.id = cursor.getInt(cursor.getColumnIndexOrThrow(ID_FOR_COLUMN_NAME));
-
-        try {
-            for (TableInfo.ColumnInfo columnInfo : tableInfo.columnInfos) {
-                String name = columnInfo.name;
-                Field field = columnInfo.field;
-                Class type = columnInfo.type;
-                field.setAccessible(true);
-
-                int columnIndex = cursor.getColumnIndexOrThrow(name);
-
-                if (type == String.class) {
-                    field.set(t, cursor.getString(columnIndex));
-                } else if (type == int.class || type == Integer.class) {
-                    field.set(t, cursor.getInt(columnIndex));
-                } else if (type == long.class || type == Long.class) {
-                    field.set(t, cursor.getLong(columnIndex));
-                } else if (type == double.class || type == Double.class) {
-                    field.set(t, cursor.getDouble(columnIndex));
-                } else if (type == boolean.class || type == Boolean.class) {
-                    field.set(t, Boolean.valueOf(cursor.getString(columnIndex)));
-                } else if(type == Date.class) {
-                    field.set(t, new Date(cursor.getLong(columnIndex)));
-                } else if (type == float.class || type == Float.class) {
-                    field.set(t, cursor.getFloat(columnIndex));
-                } else if (type == char.class || type == Character.class) {
-                    field.set(t, cursor.getString(columnIndex).charAt(0));
-                } else if (type == byte.class || type == Byte.class) {
-                    field.set(t, (byte) cursor.getInt(columnIndex));
-                } else if (type == short.class || type == Short.class) {
-                    field.set(t, cursor.getShort(columnIndex));
-                }
-            } // end for
-            return t;
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 如果使用查询出的对象执行则会更新数据库而不是插入
-     * @param t
-     * @return
-     */
-    public synchronized boolean insertOrUpdate(T t) {
-        StringBuilder sql = new StringBuilder()
-                .append("INSERT OR REPLACE INTO ").append(TABLE_NAME).append(" VALUES")
-                .append("(")
-                .append(t.id == -1 ? "NULL" : t.id);
-
-        try {
-            for (TableInfo.ColumnInfo columnInfo : tableInfo.columnInfos) {
-                String name = columnInfo.name;
-                Field field = columnInfo.field;
-                Class type = columnInfo.type;
-                field.setAccessible(true);
-                Object oval = field.get(t);
-
-                if (type == String.class || type == boolean.class || type == char.class ||
-                        type == Boolean.class || type == Character.class) {//text
-                    String val = InternalUtil.toSQLStringValue(oval);
-                    sql.append(", ").append(val);
-                } else if (type == int.class || type == long.class || type == byte.class || type == short.class ||
-                        type == Integer.class || type == Long.class || type == Byte.class || type == Short.class) {//integer
-                    String val = InternalUtil.toSQLIntegerValue(oval);
-                    sql.append(", ").append(val);
-                } else if (type == double.class || type == float.class ||
-                        type == Double.class || type == Float.class) {//float
-                    String val = InternalUtil.toSQLRealValue(oval);
-                    sql.append(", ").append(val);
-                } else if (type == Date.class) {
-                    String val = InternalUtil.toSQLDateValue(oval);
-                    sql.append(", ").append(val);
-                } else {
-                    Log.w(TAG, "insertOrUpdate: an unsupported field type: name = " + name + ", " + type.getName());
-                }
-            }
-        } catch (IllegalAccessException ignore) {
-        }
-        sql.append(")");
-
-        try {
-            String sSql = sql.toString();
-            Log.i(TAG, "insertOrUpdate: " + sSql);
-            getWritableDatabase().execSQL(sSql);
-            return true;
-        } catch (SQLException e) {
-            Log.w(TAG, "insertOrUpdate: ", e);
-        }
-        return false;
-    }
-
-    public synchronized boolean delete(String where) {
-        if (where == null || where.trim().isEmpty()) {
-            return false;
-        }
-
-        String sql = "DELETE FROM " + TABLE_NAME + " WHERE " + where;
-        try {
-            Log.i(TAG, "delete: " + sql);
+        if (autoCreation) {
+            String sql = tableInfo.getSQLDescription();
+            Log.i(TAG, "SQL description: " + sql);
             getWritableDatabase().execSQL(sql);
-            return true;
-        } catch (SQLException e) {
-            Log.w(TAG, "delete: ", e);
-            return false;
+        }
+
+        sTableInfoCache.put(cls, tableInfo);
+        return tableInfo;
+    }
+
+    public final void createTable(Class<?> clsTable) throws SQLException {
+        TableInfo tableInfo = getTableInfo(clsTable, false);
+        String sql = tableInfo.getSQLDescription();
+        Log.i(TAG, "createTable: " + sql);
+        getWritableDatabase().execSQL(sql);
+    }
+
+    @SafeVarargs
+    public final <T>void insert(Class<T>clsTable, T...items) throws SQLException {
+        if (items == null || items.length == 0) {
+            return;
+        }
+
+        TableInfo tableInfo = getTableInfo(clsTable, true);
+
+        StringBuilder sqlBuilder = new StringBuilder(512)
+                .append("INSERT INTO ").append(tableInfo.name)
+                .append(" VALUES");
+        for (int i = 0; i < items.length; i++) {
+            if (i != 0) {
+                sqlBuilder.append(", ");
+            }
+            sqlBuilder.append('(');
+            appendContentForValues(sqlBuilder, tableInfo, items[i]);
+            sqlBuilder.append(')');
+        }
+
+        String sql = sqlBuilder.toString();
+        Log.i(TAG, "insert: " + sql);
+        getWritableDatabase().execSQL(sql);
+    }
+
+    /**
+     * 插入数据或更新数据，依懒主键
+     * @param items
+     * @throws SQLException
+     */
+    @SafeVarargs
+    public final <T>void insertOrUpdate(Class<T>clsTable, T...items) throws SQLException {
+        if (items == null || items.length == 0) {
+            return;
+        }
+
+        TableInfo tableInfo = getTableInfo(clsTable, true);
+
+        StringBuilder sqlBuilder = new StringBuilder(512)
+                .append("INSERT OR REPLACE INTO ").append(tableInfo.name)
+                .append(" VALUES");
+        for (int i = 0; i < items.length; i++) {
+            if (i != 0) {
+                sqlBuilder.append(", ");
+            }
+            sqlBuilder.append('(');
+            appendContentForValues(sqlBuilder, tableInfo, items[i]);
+            sqlBuilder.append(')');
+        }
+
+        String sql = sqlBuilder.toString();
+        Log.i(TAG, "insertOrUpdate: " + sql);
+        getWritableDatabase().execSQL(sql);
+    }
+
+    private void appendContentForValues(StringBuilder sqlBuilder, TableInfo tableInfo, Object value) {
+        try {
+            for (int i = 0; i < tableInfo.columnInfos.size(); i++) {
+                TableInfo.ColumnInfo columnInfo = tableInfo.columnInfos.get(i);
+                ISQLTypeConverter sqlTypeConverter = columnInfo.sqlTypeConverter;
+                Field field = columnInfo.field;
+                field.setAccessible(true);
+                Object oval = field.get(value);
+
+                if (i != 0) {
+                    sqlBuilder.append(", ");
+                }
+
+                if (columnInfo.hasAutoIncrement && (oval == null || ((int) oval) == 0)) {
+                    sqlBuilder.append("NULL");
+                } else {
+                    sqlBuilder.append(sqlTypeConverter.convert(oval));
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * 使用 id删除记录
-     * @param ids
-     * @return
+     * 删除数据，依懒主键
+     * @param items
+     * @throws SQLException
      */
-    public synchronized boolean delete(int[]ids) {
-        if (ids == null || ids.length == 0) {
-            return false;
+    @SafeVarargs
+    public final <T>void delete(Class<T>clsTable, T...items) throws SQLException {
+        if (items == null || items.length == 0) {
+            return;
         }
 
-        StringBuilder sql = new StringBuilder()
-                .append("DELETE FROM ").append(TABLE_NAME)
-                .append(" WHERE ").append(ID_FOR_COLUMN_NAME).append(" = ").append(ids[0]);
+        TableInfo tableInfo = getTableInfo(clsTable, false);
 
-        for (int i = 1; i < ids.length; i++) {
-            sql.append(" OR ").append(ID_FOR_COLUMN_NAME).append(" = ").append(ids[i]);
+        if (tableInfo.primaryKey == null) {
+            throw new SQLException("the primary key cannot be found in table definition of " + clsTable.getSimpleName());
         }
+
+        StringBuilder whereBuilder = new StringBuilder(128);
 
         try {
-            String sSql = sql.toString();
-            Log.i(TAG, "delete: " + sSql);
-            getWritableDatabase().execSQL(sSql);
-            return true;
-        } catch (SQLException e) {
-            Log.w(TAG, "delete: ", e);
-            return false;
+            for (int i = 0; i < items.length; i++) {
+                tableInfo.primaryKey.field.setAccessible(true);
+                Object primaryKeyValue = tableInfo.primaryKey.field.get(items[i]);
+
+                if (i != 0) {
+                    whereBuilder.append(" OR ");
+                }
+                whereBuilder.append(tableInfo.primaryKey.name).append(" = ");
+                if (primaryKeyValue == null) {
+                    whereBuilder.append("NULL");
+                } else {
+                    whereBuilder.append(',').append(primaryKeyValue).append(',');
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
+
+        delete(clsTable, whereBuilder.toString());
     }
 
     /**
-     * 便用 id查询数据库
-     * @param ids
-     * @return
+     *
+     * @param where 不可为空
      */
-    public synchronized List<T> query(int[]ids) {
-        if (ids == null || ids.length == 0) {
-            return new ArrayList<>(0);
+    public final void delete(Class<?>clsTable, String where) throws SQLException {
+        if (where == null || where.trim().isEmpty()) {
+            throw new SQLException("'where' can not be empty.");
         }
 
-        List<T>list = new ArrayList<>(ids.length);
+        TableInfo tableInfo = getTableInfo(clsTable, false);
 
-        StringBuilder sql = new StringBuilder()
-                .append("SELECT * FROM ").append(TABLE_NAME)
-                .append(" WHERE ").append(ID_FOR_COLUMN_NAME).append(" = ").append(ids[0]);
+        StringBuilder sqlBuilder = new StringBuilder(128)
+                .append("DELETE FROM ").append(tableInfo.name)
+                .append(" WHERE ").append(where);
 
-        for (int i = 1; i < ids.length; i++) {
-            sql.append(" OR ").append(ID_FOR_COLUMN_NAME).append(" = ").append(ids[i]);
-        }
-
-        Cursor cursor = null;
-        try {
-            String sSql = sql.toString();
-            Log.i(TAG, "query: " + sSql);
-            cursor = getReadableDatabase().rawQuery(sSql, null);
-            boolean hasNext = cursor != null && cursor.moveToFirst();
-            while (hasNext) {
-                T t = parseRow(cursor);
-                list.add(t);
-                hasNext = cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.w(TAG, "query: ", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return list;
+        String sql = sqlBuilder.toString();
+        Log.i(TAG, "delete: " + sql);
+        getWritableDatabase().execSQL(sql);
     }
 
     /**
-     * 查询所有符合条件的数据，如："_id_ = 5"
+     * 查询所有符合条件的数据，如："id = 5"
      * @param where
      * @return
      */
-    public List<T> query(String where) {
-        return query(where, 0, -1);
+    public final <T>List<T> query(Class<T>clsTable, String where) throws SQLException {
+        TableInfo tableInfo = getTableInfo(clsTable, false);
+
+        StringBuilder sqlBuilder = new StringBuilder(128)
+                .append("SELECT * FROM ").append(tableInfo.name);
+        if (where != null) {
+            sqlBuilder.append(" WHERE ").append(where);
+        }
+
+        String sql = sqlBuilder.toString();
+        Log.i(TAG, "query: " + sql);
+        return rawQuery(sql, clsTable, new LinkedList<T>());
     }
 
     /**
      * 分页查询符合条件的数据
-     * @param where 如："_id_ = 5 OR name = 'jack'"
+     * @param where 如："id = 5 OR name = 'jack'"
      * @param offset
      * @param count
      * @return
      */
-    public synchronized List<T> query(String where, int offset, int count) {
+    public final <T>List<T> query(Class<T>clsTable, String where, int offset, int count) throws SQLException {
         if (offset < 0) {
             offset = 0;
         }
@@ -288,88 +238,121 @@ public class SuperSQLite<T extends BaseRow> extends SQLiteOpenHelper {
             count = -1;
         }
 
-        List<T>list = new LinkedList<>();
-
+        List<T> list = new ArrayList<>(count);
         if (count == 0) {
             return list;
         }
 
-        StringBuilder sql = new StringBuilder()
-                .append("SELECT * FROM ").append(TABLE_NAME);
-        if (where != null) {
-            sql.append(" WHERE ").append(where);
-        }
-        sql.append(" ORDER BY ").append(ID_FOR_COLUMN_NAME)
-                .append(" LIMIT ").append(offset).append(", ").append(count);
+        TableInfo tableInfo = getTableInfo(clsTable, false);
 
+        StringBuilder sqlBuilder = new StringBuilder(128)
+                .append("SELECT * FROM ").append(tableInfo.name);
+        if (where != null) {
+            sqlBuilder.append(" WHERE ").append(where);
+        }
+        sqlBuilder.append(" LIMIT ").append(offset).append(", ").append(count);
+
+        String sql = sqlBuilder.toString();
+        Log.i(TAG, "query: " + sql);
+        return rawQuery(sql, clsTable, list);
+    }
+
+    public final <T>List<T> rawQuery(String sql, Class<T>cls, List<T>outResult) throws SQLException {
         Cursor cursor = null;
         try {
-            String sSql = sql.toString();
-            Log.i(TAG, "query: " + sSql);
-            cursor = getReadableDatabase().rawQuery(sSql, null);
+            cursor = getReadableDatabase().rawQuery(sql, null);
             boolean hasNext = cursor != null && cursor.moveToFirst();
             while (hasNext) {
-                T t = parseRow(cursor);
-                list.add(t);
+                T t = readRow(cursor, cls);
+                outResult.add(t);
                 hasNext = cursor.moveToNext();
             }
-        } catch (SQLException e) {
-            Log.w(TAG, "query: ", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
             }
         }
-        return list;
+        return outResult;
     }
 
-    public synchronized <E>E executor(Function<E>fun) {
-        return fun.function(getWritableDatabase());
-    }
+    protected <T>T readRow(Cursor cursor, Class<T>cls) throws SQLException {
+        T t;
+        try {
+            t = cls.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
 
-    public synchronized void executor(Procedure proc) {
-        proc.procedure(getWritableDatabase());
+        TableInfo tableInfo = getTableInfo(cls, false);
+        String[]columnNames = cursor.getColumnNames();
+        try {
+            for (String columnName : columnNames) {
+                TableInfo.ColumnInfo columnInfo = tableInfo.getColumnInfo(columnName);
+                if (columnInfo == null) {
+                    Log.w(TAG, "readRow: column info not found in table " + tableInfo.name + ": " + columnName);
+                    continue;
+                }
+
+                IJavaTypeConverter<?> javaTypeConverter = columnInfo.javaTypeConverter;
+                String name = columnInfo.name;
+                Field field = columnInfo.field;
+                field.setAccessible(true);
+                field.set(t, javaTypeConverter.convert(cursor, name));
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        return t;
     }
 
     /**
      * 查询数据总条数量
      * @return
      */
-    public int getCount() {
-        return getCount(null);
+    public final <T>int getCount(Class<T>clsTable) {
+        return getCount(clsTable, null);
     }
 
     /**
      * 查询符合条件数据的数量
-     * @param where 如："_id_ = 5 AND name = 'jack'"
+     * @param where 如："id = 5 AND name = 'jack'"
      * @return
      */
-    public synchronized int getCount(String where) {
+    public final int getCount(Class<?>clsTable, String where) throws SQLException {
+        TableInfo tableInfo = getTableInfo(clsTable, false);
         String countAlias = "count";
-        StringBuilder sql = new StringBuilder()
-                .append("SELECT COUNT(").append(ID_FOR_COLUMN_NAME).append(") AS ").append(countAlias).append(" FROM ").append(TABLE_NAME);
+        StringBuilder sqlBuilder = new StringBuilder(128)
+                .append("SELECT COUNT(*) AS ").append(countAlias).append(" FROM ").append(tableInfo.name);
+
         if (where != null) {
-            sql.append(" WHERE ").append(where);
+            sqlBuilder.append(" WHERE ").append(where);
         }
 
         Cursor cursor = null;
         try {
-            String sSql = sql.toString();
-            Log.i(TAG, "getCount: " + sSql);
-            cursor = getReadableDatabase().rawQuery(sSql, null);
+            String sql = sqlBuilder.toString();
+            Log.i(TAG, "getCount: " + sql);
+            cursor = getReadableDatabase().rawQuery(sql, null);
             if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getInt(cursor.getColumnIndexOrThrow(countAlias));
+                return cursor.getInt(cursor.getColumnIndex(countAlias));
             } else {
                 return 0;
             }
-        } catch (SQLException e) {
-            Log.w(TAG, "getCount: ", e);
-            return 0;
         } finally {
             if (cursor != null) {
                 cursor.close();
             }
         }
+    }
+
+    public final <T>T executor(Function<T>fun) {
+        return fun.function(getWritableDatabase());
+    }
+
+    public final void executor(Procedure proc) {
+        proc.procedure(getWritableDatabase());
     }
 
 }
