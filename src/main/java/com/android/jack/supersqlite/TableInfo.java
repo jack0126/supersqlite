@@ -223,7 +223,7 @@ class TableInfo {
                 sql.append(" UNIQUE");
             }
             if (columnInfo.hasCheck) {
-                sql.append(" CHECK(").append(columnInfo.checkExpression).append(")");
+                sql.append(" CHECK(").append(columnInfo.checkExpression).append(')');
             }
         }
 
