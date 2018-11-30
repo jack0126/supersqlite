@@ -1,4 +1,5 @@
-# supersqlite
+# SuperSQLite
+各位大佬帮我改进改进，e-mail: 1298809673@qq.com
 android sqlite database 框架。
 
 本框架用反射实现 POJO类自动生成数据库表，SQL语句自动完成，自动读取查询结果。
