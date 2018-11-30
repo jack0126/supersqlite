@@ -113,11 +113,7 @@ class TableInfo {
 
         private String parseColumnName(Field field) {
             if (field.isAnnotationPresent(Binding.class)) {
-                String name = field.getAnnotation(Binding.class).value();
-                if (name.trim().isEmpty()) {
-                    throw new BindingException("field: " + field.getName() + " to binding \"" + name + "\" of column");
-                }
-                return name;
+                return field.getAnnotation(Binding.class).value();
             } else {
                 return field.getName();
             }
@@ -166,11 +162,7 @@ class TableInfo {
 
     private String parseTableName(Class<?>cls) {
         if (cls.isAnnotationPresent(Binding.class)) {
-            String name = cls.getAnnotation(Binding.class).value();
-            if (name.trim().isEmpty()) {
-                throw new BindingException("class: " + cls.getName() + " to binding \"" + name + "\" of table");
-            }
-            return name;
+            return cls.getAnnotation(Binding.class).value();
         } else {
             return cls.getSimpleName();
         }
